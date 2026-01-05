@@ -22,6 +22,9 @@ use App\Http\Controllers\ProfileController;
 |
 */
 
+Route::view('/offline', 'offline');
+
+
 // Public routes
 Route::get('/', function () {
     return redirect()->route('login');
