@@ -183,20 +183,7 @@
                             @endif
                         </form>
                         
-                        <div class="demo-credentials">
-                            <h6><i class="fas fa-info-circle me-2"></i>Demo Credentials:</h6>
-                            <div class="row">
-                                <div class="col-6">
-                                    <small class="d-block text-muted">Admin Account:</small>
-                                    <strong>admin@farm.com</strong><br>
-                                    <small>Password: password</small>
-                                </div>
-                                <div class="col-6">
-                                    <small class="d-block text-muted">Staff Account:</small>
-                                    <strong>staff@farm.com</strong><br>
-                                    <small>Password: password</small>
-                                </div>
-                            </div>
+                        
                         </div>
                     </div>
                 </div>
