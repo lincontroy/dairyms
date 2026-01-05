@@ -210,16 +210,13 @@ padding:15px 20px; z-index:9999; max-width:320px; width:90%;">
     </button>
 </div><script>
     let deferredPrompt = null;
-    
-    window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-    
-        // Show popup if not installed before
-        if (!localStorage.getItem('pwa_installed')) {
-            document.getElementById('pwa-install').style.display = 'block';
-        }
-    });
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    document.getElementById('pwa-install').style.display = 'block';
+});
+
     
     document.getElementById('install-btn')?.addEventListener('click', async () => {
         if (!deferredPrompt) return;

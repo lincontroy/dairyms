@@ -1,5 +1,4 @@
 <?php
-// app/Models/MilkProduction.php
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -16,7 +15,7 @@ class MilkProduction extends Model
         'evening_yield',
         'lactation_number', 
         'days_in_milk', 
-        'total_yield',
+        // REMOVE 'total_yield' from fillable
         'notes',
         'milker_id',
         'approved_by',
@@ -28,19 +27,15 @@ class MilkProduction extends Model
         'date' => 'date',
         'morning_yield' => 'decimal:2',
         'evening_yield' => 'decimal:2',
-        'total_yield' => 'decimal:2',
+        'total_yield' => 'decimal:2', // Keep this cast
         'approved_at' => 'datetime',
-        'email_notifications' => 'boolean',
-        'sms_notifications' => 'boolean',
-        'health_alerts' => 'boolean',
     ];
 
+    // Remove the booted() method or modify it
     protected static function booted()
     {
         static::creating(function ($milkProduction) {
-            $milkProduction->total_yield = 
-                ($milkProduction->morning_yield ?? 0) + 
-                ($milkProduction->evening_yield ?? 0);
+            // REMOVE this line: $milkProduction->total_yield = ...
             
             // Set default status based on user role
             if (auth()->check()) {
@@ -56,6 +51,27 @@ class MilkProduction extends Model
                 }
             }
         });
+
+        // Optional: If you want to update lactation_number or days_in_milk automatically
+        static::creating(function ($milkProduction) {
+            if (!$milkProduction->lactation_number && $milkProduction->animal) {
+                // Get the latest lactation number for this animal
+                $latest = self::where('animal_id', $milkProduction->animal_id)
+                    ->latest('date')
+                    ->first();
+                
+                $milkProduction->lactation_number = $latest ? $latest->lactation_number : 1;
+            }
+        });
+    }
+
+    // Add an accessor for total_yield if you still want to use it in code
+    public function getTotalYieldAttribute()
+    {
+        // If the database has a generated column, it will use that
+        // Otherwise, calculate it
+        return $this->attributes['total_yield'] ?? 
+               (($this->morning_yield ?? 0) + ($this->evening_yield ?? 0));
     }
 
     public function animal()
@@ -114,5 +130,17 @@ class MilkProduction extends Model
     public function isRejected()
     {
         return $this->status === 'rejected';
+    }
+
+    // Add a method to calculate days in milk
+    public function calculateDaysInMilk()
+    {
+        if ($this->animal && $this->date) {
+            // Find the calving date for this lactation
+            // This would need to be implemented based on your breeding records
+            // For now, return null or calculate based on some logic
+            return null;
+        }
+        return null;
     }
 }
