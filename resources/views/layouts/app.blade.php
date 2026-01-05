@@ -496,19 +496,15 @@
                 </li>
                 
                 <li class="nav-item">
-                    <a class="nav-link" href="/users">
-                        <i class="fas fa-users"></i>
-                        <span>User Management</span>
-                    </a>
-                </li>
-                @endif
-                
-                <li class="nav-item">
-                    <a class="nav-link" href="#">
+                    <a class="nav-link {{ request()->routeIs('reports.*') ? 'active' : '' }}" 
+                       href="{{ route('reports.index') }}">
                         <i class="fas fa-chart-bar"></i>
                         <span>Reports</span>
                     </a>
                 </li>
+                @endif
+                
+              
                 
                 <li class="nav-item mt-3">
                     <a class="nav-link {{ request()->routeIs('profile.*') ? 'active' : '' }}" 

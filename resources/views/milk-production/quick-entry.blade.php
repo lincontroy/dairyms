@@ -1,4 +1,4 @@
-redesign this to look more easy for farm staff to easyly record milk @extends('layouts.app')
+@extends('layouts.app')
 
 @section('title', 'Quick Milk Entry - Dairy Farm Management')
 @section('page-title', 'Quick Milk Entry')

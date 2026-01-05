@@ -6,6 +6,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HealthRecordController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\BreedingRecordController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\AnimalController;
 use App\Http\Controllers\MilkProductionController;  
 use App\Http\Controllers\ProfileController;
@@ -57,6 +58,10 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('health', 'HealthRecordController')->except(['show']);
     });
     
+    Route::prefix('reports')->group(function () {
+        Route::get('/', [ReportController::class, 'index'])->name('reports.index');
+        Route::post('/generate', [ReportController::class, 'generate'])->name('reports.generate');
+    });
     // Admin only routes
     Route::middleware(['can:manage-users'])->group(function () {
         Route::resource('users', 'UserController')->except(['show']);
