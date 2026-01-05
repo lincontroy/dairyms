@@ -191,6 +191,79 @@
         </div>
     </div>
 
+    <!-- PWA Install Popup -->
+<div id="pwa-install" style="display:none; position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
+background:#fff; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.15);
+padding:15px 20px; z-index:9999; max-width:320px; width:90%;">
+    
+    <div style="display:flex; align-items:center; gap:10px;">
+        <img src="/logo.jpg" width="40">
+        <div style="flex:1">
+            <strong>Install App</strong><br>
+            <small>Get faster access & offline support</small>
+        </div>
+        <button onclick="hidePWAInstall()" style="border:none;background:none;font-size:18px;">✕</button>
+    </div>
+
+    <button id="install-btn" class="btn btn-primary btn-sm w-100 mt-2">
+        Install
+    </button>
+</div><script>
+    let deferredPrompt = null;
+    
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+    
+        // Show popup if not installed before
+        if (!localStorage.getItem('pwa_installed')) {
+            document.getElementById('pwa-install').style.display = 'block';
+        }
+    });
+    
+    document.getElementById('install-btn')?.addEventListener('click', async () => {
+        if (!deferredPrompt) return;
+    
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+    
+        if (outcome === 'accepted') {
+            localStorage.setItem('pwa_installed', 'yes');
+        }
+    
+        deferredPrompt = null;
+        hidePWAInstall();
+    });
+    
+    function hidePWAInstall() {
+        document.getElementById('pwa-install').style.display = 'none';
+    }
+    </script>
+    <script>
+        if (window.matchMedia('(display-mode: standalone)').matches) {
+            localStorage.setItem('pwa_installed', 'yes');
+        }
+        </script>
+<script>
+    const isIOS = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
+    const isInStandalone = window.navigator.standalone;
+    
+    if (isIOS && !isInStandalone && !localStorage.getItem('ios_install_shown')) {
+        const iosPopup = document.createElement('div');
+        iosPopup.innerHTML = `
+            <div style="position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
+            background:#000; color:#fff; padding:12px 16px; border-radius:10px; z-index:9999; width:90%; max-width:320px;">
+                <strong>Install App</strong><br>
+                Tap <b>Share</b> → <b>Add to Home Screen</b>
+            </div>`;
+        document.body.appendChild(iosPopup);
+        localStorage.setItem('ios_install_shown', 'yes');
+    }
+    </script>
+            
+    
+
+
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function () {
