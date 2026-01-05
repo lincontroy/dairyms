@@ -1,6 +1,6 @@
 {
     "name": "Dairy App",
-    "short_name": "LaravelPWA",
+    "short_name": "Dairy",
     "start_url": "/",
     "display": "standalone",
     "background_color": "#ffffff",
