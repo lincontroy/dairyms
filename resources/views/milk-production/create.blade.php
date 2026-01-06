@@ -87,6 +87,20 @@
                                     @enderror
                                 </div>
                             </div>
+
+                            <div class="mb-3">
+                                <label for="afternoon_yield" class="form-label">
+                                    <i class="fas fa-sun text-orange me-1"></i>Afternoon Yield (Liters)
+                                </label>
+                                <input type="number" 
+                                       class="form-control" 
+                                       id="afternoon_yield" 
+                                       name="afternoon_yield" 
+                                       value="{{ old('afternoon_yield', $milkProduction->afternoon_yield ?? '') }}"
+                                       step="0.1" 
+                                       min="0" 
+                                       max="100">
+                            </div>
                             
                             <!-- Evening Yield -->
                             <div class="col-md-6 mb-4">

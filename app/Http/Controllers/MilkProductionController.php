@@ -51,6 +51,7 @@ class MilkProductionController extends Controller
             'animal_id' => 'required|exists:animals,id',
             'date' => 'required|date',
             'morning_yield' => 'nullable|numeric|min:0|max:100',
+            'afternoon_yield' => 'nullable|numeric|min:0|max:100', // Add this
             'evening_yield' => 'nullable|numeric|min:0|max:100',
             'lactation_number' => 'nullable|integer|min:1|max:10',
             'days_in_milk' => 'nullable|integer|min:1|max:400',
@@ -107,6 +108,7 @@ class MilkProductionController extends Controller
             'animal_id' => 'required|exists:animals,id',
             'date' => 'required|date',
             'morning_yield' => 'nullable|numeric|min:0|max:100',
+            'afternoon_yield' => 'nullable|numeric|min:0|max:100', // Add this
             'evening_yield' => 'nullable|numeric|min:0|max:100',
             'lactation_number' => 'nullable|integer|min:1|max:10',
             'days_in_milk' => 'nullable|integer|min:1|max:400',
@@ -130,7 +132,6 @@ class MilkProductionController extends Controller
         return redirect()->route('milk-production.show', $milkProduction)
             ->with('success', 'Milk production record updated successfully!');
     }
-
     /**
      * Remove the specified resource from storage.
      */
@@ -163,33 +164,41 @@ class MilkProductionController extends Controller
     {
         $records = $request->input('records', []);
         
-        foreach ($records as $record) {
-            if (!empty($record['animal_id']) && 
-                (!empty($record['morning_yield']) || !empty($record['evening_yield']))) {
+        foreach ($records as $animalId => $record) {
+            if (!empty($animalId) && 
+                (!empty($record['morning_yield']) || 
+                 !empty($record['afternoon_yield']) || 
+                 !empty($record['evening_yield']))) {
                 
                 // Check for existing record
-                $existing = MilkProduction::where('animal_id', $record['animal_id'])
+                $existing = MilkProduction::where('animal_id', $animalId)
                     ->whereDate('date', $request->date)
                     ->exists();
 
-                    $total= $record['morning_yield'] + $record['evening_yield'];
-                    
                 if (!$existing) {
                     MilkProduction::create([
-                        'animal_id' => $record['animal_id'],
+                        'animal_id' => $animalId,
                         'date' => $request->date,
                         'morning_yield' => $record['morning_yield'] ?? 0,
+                        'afternoon_yield' => $record['afternoon_yield'] ?? 0,
                         'evening_yield' => $record['evening_yield'] ?? 0,
-                        'total_yield' => $total,
+                        // Don't set total_yield - let the model or database handle it
                         'milker_id' => auth()->id(),
+                        'notes' => $request->notes,
                     ]);
                 }
             }
         }
 
+        // Clear draft if exists
+        if ($request->has('clear_draft')) {
+            // You might want to clear localStorage on the client side
+        }
+
         return redirect()->route('milk-production.index')
             ->with('success', 'Milk records added successfully!');
     }
+
 
     /**
      * Monthly report

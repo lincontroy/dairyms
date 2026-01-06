@@ -426,6 +426,7 @@
         <!-- Navigation -->
         <nav class="sidebar-nav">
             <ul class="nav flex-column">
+                @if(auth()->user()->isAdmin())
                 <li class="nav-item">
                     <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" 
                        href="{{ route('dashboard') }}">
@@ -442,7 +443,7 @@
                         <span class="badge">{{ \App\Models\Animal::count() }}</span>
                     </a>
                 </li>
-                
+                @endif
                 <li class="nav-item">
                    <!-- To this: -->
 <a class="nav-link {{ request()->routeIs('breeding-records.*') ? 'active' : '' }}" 
@@ -459,6 +460,7 @@
      @endif
  </a>
                 </li>
+                @if(auth()->user()->isAdmin() || auth()->user()->isStaff() || auth()->user()->isManager())
                 
                <!-- With this: -->
 <a class="nav-link {{ request()->routeIs('milk-production.*') ? 'active' : '' }}" 
@@ -472,7 +474,7 @@
          <span class="badge">{{ $todayCount }}</span>
      @endif
  </a>
-                
+                @endif
                 <li class="nav-item">
                    <!-- To this: -->
 <a class="nav-link {{ request()->routeIs('health-records.*') ? 'active' : '' }}" 
@@ -505,6 +507,7 @@
                 @endif
                 
               
+
                 
                 <li class="nav-item mt-3">
                     <a class="nav-link {{ request()->routeIs('profile.*') ? 'active' : '' }}" 

@@ -12,10 +12,10 @@ class MilkProduction extends Model
         'animal_id', 
         'date', 
         'morning_yield', 
+        'afternoon_yield', // Add this
         'evening_yield',
         'lactation_number', 
         'days_in_milk', 
-        // REMOVE 'total_yield' from fillable
         'notes',
         'milker_id',
         'approved_by',
@@ -26,17 +26,15 @@ class MilkProduction extends Model
     protected $casts = [
         'date' => 'date',
         'morning_yield' => 'decimal:2',
+        'afternoon_yield' => 'decimal:2', // Add this
         'evening_yield' => 'decimal:2',
-        'total_yield' => 'decimal:2', // Keep this cast
+        'total_yield' => 'decimal:2',
         'approved_at' => 'datetime',
     ];
 
-    // Remove the booted() method or modify it
     protected static function booted()
     {
         static::creating(function ($milkProduction) {
-            // REMOVE this line: $milkProduction->total_yield = ...
-            
             // Set default status based on user role
             if (auth()->check()) {
                 $milkProduction->milker_id = auth()->id();
@@ -52,7 +50,7 @@ class MilkProduction extends Model
             }
         });
 
-        // Optional: If you want to update lactation_number or days_in_milk automatically
+        // If you want to update lactation_number automatically
         static::creating(function ($milkProduction) {
             if (!$milkProduction->lactation_number && $milkProduction->animal) {
                 // Get the latest lactation number for this animal
@@ -65,13 +63,40 @@ class MilkProduction extends Model
         });
     }
 
-    // Add an accessor for total_yield if you still want to use it in code
+    // Update the total_yield accessor
     public function getTotalYieldAttribute()
     {
-        // If the database has a generated column, it will use that
-        // Otherwise, calculate it
-        return $this->attributes['total_yield'] ?? 
-               (($this->morning_yield ?? 0) + ($this->evening_yield ?? 0));
+        // Calculate total from all three sessions
+        return ($this->morning_yield ?? 0) + 
+               ($this->afternoon_yield ?? 0) + 
+               ($this->evening_yield ?? 0);
+    }
+
+    // Add a method to get yields by session
+    public function getYieldsBySession()
+    {
+        return [
+            'morning' => $this->morning_yield ?? 0,
+            'afternoon' => $this->afternoon_yield ?? 0,
+            'evening' => $this->evening_yield ?? 0,
+            'total' => $this->total_yield
+        ];
+    }
+
+    // Add session-wise scopes
+    public function scopeHasMorningYield($query)
+    {
+        return $query->where('morning_yield', '>', 0);
+    }
+    
+    public function scopeHasAfternoonYield($query)
+    {
+        return $query->where('afternoon_yield', '>', 0);
+    }
+    
+    public function scopeHasEveningYield($query)
+    {
+        return $query->where('evening_yield', '>', 0);
     }
 
     public function animal()
@@ -130,17 +155,5 @@ class MilkProduction extends Model
     public function isRejected()
     {
         return $this->status === 'rejected';
-    }
-
-    // Add a method to calculate days in milk
-    public function calculateDaysInMilk()
-    {
-        if ($this->animal && $this->date) {
-            // Find the calving date for this lactation
-            // This would need to be implemented based on your breeding records
-            // For now, return null or calculate based on some logic
-            return null;
-        }
-        return null;
     }
 }

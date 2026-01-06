@@ -103,6 +103,7 @@
                                 <th>Date</th>
                                 <th>Animal</th>
                                 <th>Morning (L)</th>
+                                <th>Afternoon (L)</th>
                                 <th>Evening (L)</th>
                                 <th>Total (L)</th>
                                 <th>Milker</th>
@@ -123,6 +124,7 @@
                                     </a>
                                 </td>
                                 <td>{{ number_format($record->morning_yield, 2) }}</td>
+                                <td>{{ number_format($record->afternoon_yield, 2) }}</td>
                                 <td>{{ number_format($record->evening_yield, 2) }}</td>
                                 <td>
                                     <strong>{{ number_format($record->total_yield, 2) }}</strong>
