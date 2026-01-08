@@ -426,7 +426,7 @@
         <!-- Navigation -->
         <nav class="sidebar-nav">
             <ul class="nav flex-column">
-                @if(auth()->user()->isAdmin())
+             
                 <li class="nav-item">
                     <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" 
                        href="{{ route('dashboard') }}">
@@ -434,6 +434,9 @@
                         <span>Dashboard</span>
                     </a>
                 </li>
+            
+
+                @if(auth()->user()->isAdmin())
                 
                 <li class="nav-item">
                     <a class="nav-link {{ request()->routeIs('animals.*') ? 'active' : '' }}" 
@@ -505,6 +508,57 @@
                     </a>
                 </li>
                 @endif
+
+                <!-- Add this in the sidebar after other menu items -->
+@if(auth()->user()->canManageSuppliers())
+<li class="nav-item">
+    <div class="nav-link text-white-50 small text-uppercase mt-3 mb-1">
+        Milk Supply Chain
+    </div>
+</li>
+
+<li class="nav-item">
+    <a class="nav-link {{ request()->routeIs('suppliers.*') ? 'active' : '' }}" 
+       href="{{ route('suppliers.index') }}">
+        <i class="fas fa-truck me-2"></i>
+        <span>Suppliers</span>
+        @php
+            $activeSuppliers = \App\Models\Supplier::active()->count();
+        @endphp
+        @if($activeSuppliers > 0)
+            <span class="badge">{{ $activeSuppliers }}</span>
+        @endif
+    </a>
+</li>
+
+<li class="nav-item">
+    <a class="nav-link {{ request()->routeIs('milk-supplies.*') ? 'active' : '' }}" 
+       href="{{ route('milk-supplies.index') }}">
+        <i class="fas fa-wine-bottle me-2"></i>
+        <span>Milk Supplies</span>
+        @php
+            $todaySupplies = \App\Models\MilkSupply::today()->count();
+        @endphp
+        @if($todaySupplies > 0)
+            <span class="badge">{{ $todaySupplies }}</span>
+        @endif
+    </a>
+</li>
+
+<li class="nav-item">
+    <a class="nav-link {{ request()->routeIs('payments.*') ? 'active' : '' }}" 
+       href="{{ route('payments.index') }}">
+        <i class="fas fa-money-bill-wave me-2"></i>
+        <span>Payments</span>
+        @php
+            $pendingPayments = \App\Models\SupplierPayment::pending()->count();
+        @endphp
+        @if($pendingPayments > 0)
+            <span class="badge">{{ $pendingPayments }}</span>
+        @endif
+    </a>
+</li>
+@endif
                 
               
 

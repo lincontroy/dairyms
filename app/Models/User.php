@@ -96,4 +96,33 @@ class User extends Authenticatable
     {
         return in_array($this->role, ['admin', 'manager']);
     }
+
+    public function canManageSuppliers()
+{
+    return in_array($this->role, ['admin', 'manager']);
+}
+
+// Check if user can record milk supplies
+public function canRecordMilkSupply()
+{
+    return in_array($this->role, ['manager', 'admin']);
+}
+
+// Check if user can approve payments
+public function canApprovePayments()
+{
+    return $this->role === 'admin';
+}
+
+// Add relationship
+public function recordedSupplies()
+{
+    return $this->hasMany(MilkSupply::class, 'recorded_by');
+}
+
+public function supplierPayments()
+{
+    return $this->hasMany(SupplierPayment::class, 'created_by');
+}
+
 }

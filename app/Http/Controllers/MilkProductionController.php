@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\MilkProduction;
 use App\Models\Animal;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class MilkProductionController extends Controller
 {
@@ -17,8 +18,14 @@ class MilkProductionController extends Controller
             ->latest()
             ->paginate(20);
         
-        $todayTotal = MilkProduction::today()->sum('total_yield');
-        $monthTotal = MilkProduction::currentMonth()->sum('total_yield');
+            $todayProduction = MilkProduction::today()->get();
+            $todayTotal = $todayProduction->sum(function($record) {
+                return ($record->morning_yield ?? 0) + 
+                       ($record->afternoon_yield ?? 0) + 
+                       ($record->evening_yield ?? 0);
+            });
+            $monthTotal = MilkProduction::currentMonth()
+            ->sum(DB::raw('COALESCE(morning_yield, 0) + COALESCE(afternoon_yield, 0) + COALESCE(evening_yield, 0)'));
         
         return view('milk-production.index', compact(
             'milkProductions', 

@@ -3,18 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Models\Animal;
-use App\Models\BreedingRecord;
 use App\Models\MilkProduction;
 use App\Models\HealthRecord;
+use Illuminate\Support\Facades\DB;
+use App\Models\BreedingRecord;
+use App\Models\Supplier;
+use App\Models\MilkSupply;
+use App\Models\SupplierPayment;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('auth');
-    }
-
     public function index()
     {
         $user = auth()->user();
@@ -22,7 +21,7 @@ class DashboardController extends Controller
         // Get all animals for statistics
         $allAnimals = Animal::with(['breedingRecords', 'milkProductions', 'healthRecords'])->get();
         
-        // Statistics
+        // Basic animal statistics
         $stats = [
             'totalAnimals' => $allAnimals->count(),
             'lactatingCows' => $allAnimals->where('status', 'lactating')->count(),
@@ -31,11 +30,53 @@ class DashboardController extends Controller
                 ->where('actual_calving_date', null)
                 ->count(),
             'dryCows' => $allAnimals->where('status', 'dry')->count(),
-            'totalMilkToday' => MilkProduction::whereDate('date', today())->sum('total_yield'),
+            'totalMilkToday' => MilkProduction::whereDate('date', today())
+            ->sum(DB::raw('COALESCE(morning_yield, 0) + COALESCE(afternoon_yield, 0) + COALESCE(evening_yield, 0)')),
             'sickAnimals' => HealthRecord::where('date', '>=', now()->subDays(7))
                 ->where('outcome', 'Under Treatment')
                 ->distinct('animal_id')
                 ->count('animal_id'),
+        ];
+
+        // Milk Supply & Supplier Statistics
+        $today = today()->format('Y-m-d');
+        $todaySupplied = MilkSupply::whereDate('date', $today)->sum('quantity_liters');
+        $todayWaste = MilkSupply::whereDate('date', $today)->sum('waste_liters');
+        $todayRevenue = MilkSupply::whereDate('date', $today)->sum('total_amount');
+        
+        $monthStart = now()->startOfMonth()->format('Y-m-d');
+        $monthEnd = now()->endOfMonth()->format('Y-m-d');
+        $monthRevenue = MilkSupply::whereBetween('date', [$monthStart, $monthEnd])
+            ->where('status', 'approved')
+            ->sum('total_amount');
+        
+        $pendingPaymentsCount = SupplierPayment::where('status', 'pending')->count();
+        $pendingPaymentsAmount = SupplierPayment::where('status', 'pending')->sum('amount');
+        
+        // Calculate total balance due more efficiently
+        $suppliers = Supplier::with(['milkSupplies' => function($q) {
+            $q->where('status', 'approved');
+        }, 'payments' => function($q) {
+            $q->where('status', 'approved');
+        }])->get();
+        
+        $totalBalanceDue = 0;
+        foreach ($suppliers as $supplier) {
+            $totalSupplied = $supplier->milkSupplies->sum('total_amount');
+            $totalPaid = $supplier->payments->sum('amount');
+            $totalBalanceDue += ($totalSupplied - $totalPaid);
+        }
+        
+        $milkSupplyStats = [
+            'totalSuppliers' => Supplier::where('status', 'active')->count(),
+            'todaySupplied' => $todaySupplied,
+            'todayWaste' => $todayWaste,
+            'todayRevenue' => $todayRevenue,
+            'monthRevenue' => $monthRevenue,
+            'pendingPaymentsCount' => $pendingPaymentsCount,
+            'pendingPaymentsAmount' => $pendingPaymentsAmount,
+            'totalBalanceDue' => $totalBalanceDue,
+            'avgMilkPrice' => Supplier::where('status', 'active')->avg('rate_per_liter') ?? 0,
         ];
 
         // Recent activities
@@ -45,14 +86,53 @@ class DashboardController extends Controller
             ->latest()
             ->take(5)
             ->get();
+        
+        // Recent milk supplies
+        $recentMilkSupplies = MilkSupply::with('supplier')
+            ->latest()
+            ->take(5)
+            ->get();
+        
+        // Recent payments
+        $recentPayments = SupplierPayment::with('supplier')
+            ->latest()
+            ->take(5)
+            ->get();
+        
+        // Top suppliers this month - Fixed query
+        $topSuppliers = Supplier::with(['milkSupplies' => function($q) {
+            $q->whereMonth('date', now()->month)
+              ->where('status', 'approved');
+        }, 'payments' => function($q) {
+            $q->where('status', 'approved');
+        }])->get()->sortByDesc(function($supplier) {
+            return $supplier->milkSupplies->sum('quantity_liters');
+        })->take(5);
+        
+        // Pending tasks
+        $pendingTasks = [
+            'pendingMilkSupplies' => MilkSupply::where('status', 'recorded')->count(),
+            'pendingPayments' => SupplierPayment::where('status', 'pending')->count(),
+            'lowActivitySuppliers' => Supplier::where('status', 'active')
+                ->whereHas('milkSupplies', function($q) {
+                    $q->whereDate('date', '>=', now()->subDays(7));
+                }, '<', 3)
+                ->count(),
+            'activeHealthIssues' => HealthRecord::where('outcome', 'Under Treatment')->count(),
+        ];
 
         return view('dashboard.index', compact(
             'stats', 
+            'milkSupplyStats',
             'recentAnimals', 
             'recentBreedings', 
             'recentHealth',
+            'recentMilkSupplies',
+            'recentPayments',
             'user',
-            'allAnimals' // Pass all animals for statistics
+            'allAnimals',
+            'topSuppliers',
+            'pendingTasks'
         ));
     }
 }

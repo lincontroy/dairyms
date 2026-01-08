@@ -7,6 +7,9 @@ use App\Http\Controllers\HealthRecordController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\BreedingRecordController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\MilkSupplyController;
+use App\Http\Controllers\SupplierPaymentController;
 use App\Http\Controllers\AnimalController;
 use App\Http\Controllers\MilkProductionController;  
 use App\Http\Controllers\ProfileController;
@@ -60,6 +63,37 @@ Route::middleware(['auth'])->group(function () {
     Route::prefix('animals/{animal}')->group(function () {
         Route::resource('health', 'HealthRecordController')->except(['show']);
     });
+
+
+
+// Add these routes
+
+// Suppliers Management
+
+   
+    Route::post('/milk-supplies/{milkSupply}/approve', [MilkSupplyController::class, 'approve'])
+        ->name('milk-supplies.approve');
+    Route::get('/milk-supplies/daily-report', [MilkSupplyController::class, 'dailyReport'])
+        ->name('milk-supplies.daily-report');
+    
+    // Supplier Payments
+   
+    Route::post('/payments/{payment}/approve', [SupplierPaymentController::class, 'approve'])
+        ->name('payments.approve');
+    Route::post('/payments/{payment}/reject', [SupplierPaymentController::class, 'reject'])
+        ->name('payments.reject');
+    Route::post('/payments/bulk-approve', [SupplierPaymentController::class, 'bulkApprove'])
+        ->name('payments.bulk-approve');
+    Route::post('/payments/generate', [SupplierPaymentController::class, 'generatePayments'])
+        ->name('payments.generate');
+
+        Route::resource('suppliers', SupplierController::class);
+    
+        // Milk Supplies
+        Route::resource('milk-supplies', MilkSupplyController::class);
+
+        Route::resource('payments', SupplierPaymentController::class);
+
     
     Route::prefix('reports')->group(function () {
         Route::get('/', [ReportController::class, 'index'])->name('reports.index');
