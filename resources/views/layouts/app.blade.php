@@ -33,7 +33,7 @@
         .sidebar {
             background-color: var(--farm-green);
             color: white;
-            min-height: 100vh;
+            height: 100vh;
             width: var(--sidebar-width);
             position: fixed;
             left: 0;
@@ -41,6 +41,8 @@
             z-index: 1000;
             transform: translateX(0);
             box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
         }
         
         .sidebar.collapsed {
@@ -53,6 +55,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            flex-shrink: 0;
         }
         
         .sidebar-brand h5 {
@@ -69,8 +72,35 @@
             cursor: pointer;
         }
         
+        /* Scrollable navigation container */
+        .sidebar-nav-container {
+            flex: 1;
+            overflow-y: auto;
+            padding-bottom: 1rem;
+        }
+        
         .sidebar-nav {
             padding: 1rem 0;
+            height: 100%;
+        }
+        
+        /* Custom scrollbar for sidebar */
+        .sidebar-nav-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .sidebar-nav-container::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        
+        .sidebar-nav-container::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+        }
+        
+        .sidebar-nav-container::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.4);
         }
         
         .sidebar-nav .nav-link {
@@ -81,6 +111,7 @@
             display: flex;
             align-items: center;
             text-decoration: none;
+            white-space: nowrap;
         }
         
         .sidebar-nav .nav-link:hover {
@@ -98,12 +129,23 @@
             width: 1.5rem;
             margin-right: 0.75rem;
             font-size: 1.1rem;
+            flex-shrink: 0;
         }
         
         .sidebar-nav .badge {
             margin-left: auto;
             background-color: rgba(255, 255, 255, 0.2);
             color: white;
+            flex-shrink: 0;
+        }
+        
+        .sidebar-nav .section-title {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin: 1.5rem 1rem 0.5rem;
+            padding: 0 0.5rem;
         }
         
         /* Main Content Area */
@@ -369,6 +411,10 @@
             .breadcrumb {
                 font-size: 0.875rem;
             }
+            
+            .sidebar {
+                width: 100%;
+            }
         }
         
         /* Overlay for mobile sidebar */
@@ -400,6 +446,47 @@
         .sidebar.show {
             animation: slideIn 0.3s ease;
         }
+        
+        /* Sidebar footer for user info */
+        .sidebar-footer {
+            padding: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            flex-shrink: 0;
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+        
+        .user-details {
+            flex: 1;
+        }
+        
+        .user-name {
+            font-size: 0.875rem;
+            font-weight: 500;
+            display: block;
+        }
+        
+        .user-role {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.7);
+            display: block;
+        }
     </style>
     
     @stack('styles')
@@ -423,155 +510,210 @@
             </button>
         </div>
         
-        <!-- Navigation -->
-        <nav class="sidebar-nav">
-            <ul class="nav flex-column">
-             
-                <li class="nav-item">
-                    <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" 
-                       href="{{ route('dashboard') }}">
-                        <i class="fas fa-tachometer-alt"></i>
-                        <span>Dashboard</span>
-                    </a>
-                </li>
-            
+        <!-- Scrollable Navigation -->
+        <div class="sidebar-nav-container">
+            <nav class="sidebar-nav">
+                <ul class="nav flex-column">
+                    <!-- Dashboard -->
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" 
+                           href="{{ route('dashboard') }}">
+                            <i class="fas fa-tachometer-alt"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
 
-                @if(auth()->user()->isAdmin())
-                
-                <li class="nav-item">
-                    <a class="nav-link {{ request()->routeIs('animals.*') ? 'active' : '' }}" 
-                       href="{{ route('animals.index') }}">
-                        <i class="fas fa-cow"></i>
-                        <span>Animal Registry</span>
-                        <span class="badge">{{ \App\Models\Animal::count() }}</span>
-                    </a>
-                </li>
-                @endif
-                <li class="nav-item">
-                   <!-- To this: -->
-<a class="nav-link {{ request()->routeIs('breeding-records.*') ? 'active' : '' }}" 
-    href="{{ route('breeding-records.index') }}">
-     <i class="fas fa-dna"></i>
-     <span>Breeding Records</span>
-     @php
-         $pregnantCount = \App\Models\BreedingRecord::where('pregnancy_result', true)
-             ->whereNull('actual_calving_date')
-             ->count();
-     @endphp
-     @if($pregnantCount > 0)
-         <span class="badge">{{ $pregnantCount }}</span>
-     @endif
- </a>
-                </li>
-                @if(auth()->user()->isAdmin() || auth()->user()->isStaff() || auth()->user()->isManager())
-                
-               <!-- With this: -->
-<a class="nav-link {{ request()->routeIs('milk-production.*') ? 'active' : '' }}" 
-    href="{{ route('milk-production.index') }}">
-     <i class="fas fa-wine-bottle"></i>
-     <span>Milk Production</span>
-     @php
-         $todayCount = \App\Models\MilkProduction::today()->count();
-     @endphp
-     @if($todayCount > 0)
-         <span class="badge">{{ $todayCount }}</span>
-     @endif
- </a>
-                @endif
-                <li class="nav-item">
-                   <!-- To this: -->
-<a class="nav-link {{ request()->routeIs('health-records.*') ? 'active' : '' }}" 
-    href="{{ route('health-records.index') }}">
-     <i class="fas fa-heartbeat"></i>
-     <span>Health Records</span>
-     @php
-         $activeIssues = \App\Models\HealthRecord::where('outcome', 'Under Treatment')->count();
-     @endphp
-     @if($activeIssues > 0)
-         <span class="badge">{{ $activeIssues }}</span>
-     @endif
- </a>
-                </li>
-                
-                @if(auth()->user()->isAdmin())
-                <li class="nav-item">
-                    <div class="nav-link text-white-50 small text-uppercase mt-3 mb-1">
-                        Administration
-                    </div>
-                </li>
-                
-                <li class="nav-item">
-                    <a class="nav-link {{ request()->routeIs('reports.*') ? 'active' : '' }}" 
-                       href="{{ route('reports.index') }}">
-                        <i class="fas fa-chart-bar"></i>
-                        <span>Reports</span>
-                    </a>
-                </li>
-                @endif
+                    <!-- Animal Management Section -->
+                    @if(auth()->user()->isAdmin() || auth()->user()->isManager() || auth()->user()->isStaff() || auth()->user()->isVet())
+                    <li class="nav-item">
+                        <div class="section-title">Animal Management</div>
+                    </li>
+                    
+                    @if(auth()->user()->isAdmin())
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('animals.*') ? 'active' : '' }}" 
+                           href="{{ route('animals.index') }}">
+                            <i class="fas fa-cow"></i>
+                            <span>Animal Registry</span>
+                            <span class="badge">{{ \App\Models\Animal::count() }}</span>
+                        </a>
+                    </li>
+                    @endif
+                    
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('breeding-records.*') ? 'active' : '' }}" 
+                           href="{{ route('breeding-records.index') }}">
+                            <i class="fas fa-dna"></i>
+                            <span>Breeding Records</span>
+                            @php
+                                $pregnantCount = \App\Models\BreedingRecord::where('pregnancy_result', true)
+                                    ->whereNull('actual_calving_date')
+                                    ->count();
+                            @endphp
+                            @if($pregnantCount > 0)
+                                <span class="badge">{{ $pregnantCount }}</span>
+                            @endif
+                        </a>
+                    </li>
+                    
+                    @if(auth()->user()->isAdmin() || auth()->user()->isStaff() || auth()->user()->isManager())
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('milk-production.*') ? 'active' : '' }}" 
+                           href="{{ route('milk-production.index') }}">
+                            <i class="fas fa-wine-bottle"></i>
+                            <span>Milk Production</span>
+                            @php
+                                $todayCount = \App\Models\MilkProduction::today()->count();
+                            @endphp
+                            @if($todayCount > 0)
+                                <span class="badge">{{ $todayCount }}</span>
+                            @endif
+                        </a>
+                    </li>
+                    @endif
+                    
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('health-records.*') ? 'active' : '' }}" 
+                           href="{{ route('health-records.index') }}">
+                            <i class="fas fa-heartbeat"></i>
+                            <span>Health Records</span>
+                            @php
+                                $activeIssues = \App\Models\HealthRecord::where('outcome', 'Under Treatment')->count();
+                            @endphp
+                            @if($activeIssues > 0)
+                                <span class="badge">{{ $activeIssues }}</span>
+                            @endif
+                        </a>
+                    </li>
+                    @endif
 
-                <!-- Add this in the sidebar after other menu items -->
-@if(auth()->user()->canManageSuppliers())
-<li class="nav-item">
-    <div class="nav-link text-white-50 small text-uppercase mt-3 mb-1">
-        Milk Supply Chain
-    </div>
-</li>
+                    <!-- Milk Supply Chain Section -->
+                    @if(auth()->user()->canManageSuppliers())
+                    <li class="nav-item">
+                        <div class="section-title">Milk Supply Chain</div>
+                    </li>
 
-<li class="nav-item">
-    <a class="nav-link {{ request()->routeIs('suppliers.*') ? 'active' : '' }}" 
-       href="{{ route('suppliers.index') }}">
-        <i class="fas fa-truck me-2"></i>
-        <span>Suppliers</span>
-        @php
-            $activeSuppliers = \App\Models\Supplier::active()->count();
-        @endphp
-        @if($activeSuppliers > 0)
-            <span class="badge">{{ $activeSuppliers }}</span>
-        @endif
-    </a>
-</li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('suppliers.*') ? 'active' : '' }}" 
+                           href="{{ route('suppliers.index') }}">
+                            <i class="fas fa-truck"></i>
+                            <span>Suppliers</span>
+                            @php
+                                $activeSuppliers = \App\Models\Supplier::active()->count();
+                            @endphp
+                            @if($activeSuppliers > 0)
+                                <span class="badge">{{ $activeSuppliers }}</span>
+                            @endif
+                        </a>
+                    </li>
 
-<li class="nav-item">
-    <a class="nav-link {{ request()->routeIs('milk-supplies.*') ? 'active' : '' }}" 
-       href="{{ route('milk-supplies.index') }}">
-        <i class="fas fa-wine-bottle me-2"></i>
-        <span>Milk Supplies</span>
-        @php
-            $todaySupplies = \App\Models\MilkSupply::today()->count();
-        @endphp
-        @if($todaySupplies > 0)
-            <span class="badge">{{ $todaySupplies }}</span>
-        @endif
-    </a>
-</li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('milk-supplies.*') ? 'active' : '' }}" 
+                           href="{{ route('milk-supplies.index') }}">
+                            <i class="fas fa-wine-bottle"></i>
+                            <span>Milk Supplies</span>
+                            @php
+                                $todaySupplies = \App\Models\MilkSupply::today()->count();
+                            @endphp
+                            @if($todaySupplies > 0)
+                                <span class="badge">{{ $todaySupplies }}</span>
+                            @endif
+                        </a>
+                    </li>
 
-<li class="nav-item">
-    <a class="nav-link {{ request()->routeIs('payments.*') ? 'active' : '' }}" 
-       href="{{ route('payments.index') }}">
-        <i class="fas fa-money-bill-wave me-2"></i>
-        <span>Payments</span>
-        @php
-            $pendingPayments = \App\Models\SupplierPayment::pending()->count();
-        @endphp
-        @if($pendingPayments > 0)
-            <span class="badge">{{ $pendingPayments }}</span>
-        @endif
-    </a>
-</li>
-@endif
-                
-              
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('payments.*') ? 'active' : '' }}" 
+                           href="{{ route('payments.index') }}">
+                            <i class="fas fa-money-bill-wave"></i>
+                            <span>Payments</span>
+                            @php
+                                $pendingPayments = \App\Models\SupplierPayment::pending()->count();
+                            @endphp
+                            @if($pendingPayments > 0)
+                                <span class="badge">{{ $pendingPayments }}</span>
+                            @endif
+                        </a>
+                    </li>
+                    @endif
 
-                
-                <li class="nav-item mt-3">
-                    <a class="nav-link {{ request()->routeIs('profile.*') ? 'active' : '' }}" 
-                       href="{{ route('profile.edit') }}">
-                        <i class="fas fa-user-cog"></i>
-                        <span>Profile Settings</span>
-                    </a>
-                </li>
-            </ul>
-        </nav>
+                    <!-- Financial Management Section -->
+                    @if(auth()->user()->canManageExpenses())
+                    <li class="nav-item">
+                        <div class="section-title">Financial Management</div>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('expenses.*') ? 'active' : '' }}" 
+                           href="{{ route('expenses.index') }}">
+                            <i class="fas fa-receipt"></i>
+                            <span>Expenses</span>
+                            @php
+                                $pendingExpenses = \App\Models\Expense::pending()->count();
+                            @endphp
+                            @if($pendingExpenses > 0)
+                                <span class="badge">{{ $pendingExpenses }}</span>
+                            @endif
+                        </a>
+                    </li>
+                    @endif
+
+                    <!-- Administration Section -->
+                    @if(auth()->user()->isAdmin())
+                    <li class="nav-item">
+                        <div class="section-title">Administration</div>
+                    </li>
+                    
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('reports.*') ? 'active' : '' }}" 
+                           href="{{ route('reports.index') }}">
+                            <i class="fas fa-chart-bar"></i>
+                            <span>Reports</span>
+                        </a>
+                    </li>
+                    
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}" 
+                           href="{{ route('users.index') }}">
+                            <i class="fas fa-users"></i>
+                            <span>User Management</span>
+                            @php
+                                $totalUsers = \App\Models\User::count();
+                            @endphp
+                            @if($totalUsers > 0)
+                                <span class="badge">{{ $totalUsers }}</span>
+                            @endif
+                        </a>
+                    </li>
+                    @endif
+
+                    <!-- Settings Section -->
+                    <li class="nav-item">
+                        <div class="section-title">Settings</div>
+                    </li>
+                    
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('profile.*') ? 'active' : '' }}" 
+                           href="{{ route('profile.edit') }}">
+                            <i class="fas fa-user-cog"></i>
+                            <span>Profile Settings</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+        
+        <!-- Sidebar Footer with User Info -->
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <div class="user-details">
+                    <span class="user-name">{{ auth()->user()->name }}</span>
+                    <span class="user-role">{{ ucfirst(auth()->user()->role) }}</span>
+                </div>
+            </div>
+        </div>
     </aside>
     
     <!-- Main Wrapper -->
@@ -660,6 +802,22 @@
                 </div>
             @endif
             
+            @if(session('warning'))
+                <div class="alert alert-warning alert-dismissible fade show">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    {{ session('warning') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            @endif
+            
+            @if(session('info'))
+                <div class="alert alert-info alert-dismissible fade show">
+                    <i class="fas fa-info-circle me-2"></i>
+                    {{ session('info') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            @endif
+            
             <!-- Page Content -->
             @yield('content')
         </main>
@@ -728,21 +886,17 @@
                 }
             });
             
-            // Update sidebar badge with live count
-            function updateAnimalCount() {
-                fetch('/api/animals/count')
-                    .then(response => response.json())
-                    .then(data => {
-                        const badge = document.querySelector('.sidebar-nav .nav-link[href*="animals"] .badge');
-                        if (badge) {
-                            badge.textContent = data.count || 0;
-                        }
-                    })
-                    .catch(error => console.error('Error fetching animal count:', error));
+            // Update sidebar badges with live count (optional - can be enabled if needed)
+            function updateSidebarCounts() {
+                // This function can be used to update counts via AJAX if needed
+                // Example: fetch('/api/sidebar-counts').then(...)
             }
             
-            // Update count on page load (you can add this API endpoint if needed)
-            // updateAnimalCount();
+            // Initialize tooltips
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl)
+            });
         });
         
         // Responsive sidebar on window resize
@@ -757,6 +911,14 @@
                 document.body.style.overflow = '';
             }
         });
+        
+        // Prevent body scroll when sidebar is open on mobile
+        document.addEventListener('touchmove', function(e) {
+            const sidebar = document.getElementById('sidebar');
+            if (sidebar.classList.contains('show')) {
+                e.preventDefault();
+            }
+        }, { passive: false });
     </script>
     
     @stack('scripts')

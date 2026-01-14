@@ -125,4 +125,30 @@ public function supplierPayments()
     return $this->hasMany(SupplierPayment::class, 'created_by');
 }
 
+// Add to the User model after other permission methods
+
+// Check if user can manage expenses
+public function canManageExpenses()
+{
+    return in_array($this->role, ['admin', 'manager']);
+}
+
+// Check if user can view expense totals
+public function canViewExpenseTotals()
+{
+    return $this->role === 'admin';
+}
+
+// Check if user can approve expenses
+public function canApproveExpenses()
+{
+    return $this->role === 'admin';
+}
+
+// Expense relationship
+public function expenses()
+{
+    return $this->hasMany(Expense::class);
+}
+
 }

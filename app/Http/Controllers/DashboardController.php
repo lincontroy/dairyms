@@ -10,6 +10,7 @@ use App\Models\BreedingRecord;
 use App\Models\Supplier;
 use App\Models\MilkSupply;
 use App\Models\SupplierPayment;
+use App\Models\Expense; // Added Expense model
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
@@ -31,7 +32,7 @@ class DashboardController extends Controller
                 ->count(),
             'dryCows' => $allAnimals->where('status', 'dry')->count(),
             'totalMilkToday' => MilkProduction::whereDate('date', today())
-            ->sum(DB::raw('COALESCE(morning_yield, 0) + COALESCE(afternoon_yield, 0) + COALESCE(evening_yield, 0)')),
+                ->sum(DB::raw('COALESCE(morning_yield, 0) + COALESCE(afternoon_yield, 0) + COALESCE(evening_yield, 0)')),
             'sickAnimals' => HealthRecord::where('date', '>=', now()->subDays(7))
                 ->where('outcome', 'Under Treatment')
                 ->distinct('animal_id')
@@ -79,6 +80,9 @@ class DashboardController extends Controller
             'avgMilkPrice' => Supplier::where('status', 'active')->avg('rate_per_liter') ?? 0,
         ];
 
+        // Get expense statistics
+        $expenseStats = $this->getExpenseStats();
+
         // Recent activities
         $recentAnimals = Animal::latest()->take(5)->get();
         $recentBreedings = BreedingRecord::with('animal')->latest()->take(5)->get();
@@ -99,7 +103,16 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
         
-        // Top suppliers this month - Fixed query
+        // Recent expenses (only for users who can manage expenses)
+        $recentExpenses = collect();
+        if ($user->canManageExpenses()) {
+            $recentExpenses = Expense::with(['user', 'supplier'])
+                ->latest()
+                ->take(5)
+                ->get();
+        }
+        
+        // Top suppliers this month
         $topSuppliers = Supplier::with(['milkSupplies' => function($q) {
             $q->whereMonth('date', now()->month)
               ->where('status', 'approved');
@@ -109,10 +122,11 @@ class DashboardController extends Controller
             return $supplier->milkSupplies->sum('quantity_liters');
         })->take(5);
         
-        // Pending tasks
+        // Pending tasks - Add expense pending tasks
         $pendingTasks = [
             'pendingMilkSupplies' => MilkSupply::where('status', 'recorded')->count(),
             'pendingPayments' => SupplierPayment::where('status', 'pending')->count(),
+            'pendingExpenses' => Expense::where('status', 'pending')->count(),
             'lowActivitySuppliers' => Supplier::where('status', 'active')
                 ->whereHas('milkSupplies', function($q) {
                     $q->whereDate('date', '>=', now()->subDays(7));
@@ -121,18 +135,66 @@ class DashboardController extends Controller
             'activeHealthIssues' => HealthRecord::where('outcome', 'Under Treatment')->count(),
         ];
 
+        // Calculate net profit/loss for admin
+        $financialOverview = [];
+        if ($user->canViewExpenseTotals()) {
+            $currentMonthRevenue = $milkSupplyStats['monthRevenue'];
+            $currentMonthExpenses = $expenseStats['month_to_date'];
+            $netProfit = $currentMonthRevenue - $currentMonthExpenses;
+            
+            $financialOverview = [
+                'month_revenue' => $currentMonthRevenue,
+                'month_expenses' => $currentMonthExpenses,
+                'net_profit' => $netProfit,
+                'profit_margin' => $currentMonthRevenue > 0 ? 
+                    ($netProfit / $currentMonthRevenue) * 100 : 0,
+            ];
+        }
+
         return view('dashboard.index', compact(
             'stats', 
             'milkSupplyStats',
+            'expenseStats',
+            'financialOverview',
             'recentAnimals', 
             'recentBreedings', 
             'recentHealth',
             'recentMilkSupplies',
             'recentPayments',
+            'recentExpenses',
             'user',
             'allAnimals',
             'topSuppliers',
             'pendingTasks'
         ));
+    }
+
+    // Expense statistics method
+    private function getExpenseStats()
+    {
+        if (!auth()->user()->canViewExpenseTotals()) {
+            return [
+                'today' => 0,
+                'month_to_date' => 0,
+                'pending_count' => 0,
+                'top_categories' => collect()
+            ];
+        }
+
+        $today = now()->toDateString();
+        $monthStart = now()->startOfMonth();
+
+        return [
+            'today' => Expense::approved()->forDate($today)->sum('amount'),
+            'month_to_date' => Expense::approved()->whereDate('date', '>=', $monthStart)->sum('amount'),
+            'pending_count' => Expense::pending()->count(),
+            'top_categories' => Expense::approved()
+                ->whereDate('date', '>=', $monthStart)
+                ->selectRaw('category, SUM(amount) as total')
+                ->groupBy('category')
+                ->orderBy('total', 'desc')
+                ->limit(3)
+                ->get()
+        ];
     }
 }

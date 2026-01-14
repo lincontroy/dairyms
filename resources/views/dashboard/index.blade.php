@@ -435,6 +435,31 @@
                 </div>
             </div>
         </div>
+
+        <!-- Add this in the Statistics Cards section -->
+@if(auth()->user()->canViewExpenseTotals())
+<div class="col-md-6 col-lg-3 mb-3">
+    <div class="card h-100 border-start border-danger border-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted mb-1">Today's Expenses</h6>
+                    <h3 class="mb-0">KSh {{ number_format($expenseStats['today'], 0) }}</h3>
+                    @if($expenseStats['pending_count'] > 0)
+                    <small class="text-warning">
+                        <i class="fas fa-clock me-1"></i>
+                        {{ $expenseStats['pending_count'] }} pending
+                    </small>
+                    @endif
+                </div>
+                <div class="text-danger">
+                    <i class="fas fa-money-bill-wave fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
     </div>
 
     <!-- Milk Production & Supply -->

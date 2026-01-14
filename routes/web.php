@@ -7,6 +7,7 @@ use App\Http\Controllers\HealthRecordController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\BreedingRecordController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\MilkSupplyController;
 use App\Http\Controllers\SupplierPaymentController;
@@ -146,5 +147,13 @@ Route::resource('breeding-records', BreedingRecordController::class);
 
 });
 
+Route::post('/expenses/{expense}/approve', [ExpenseController::class, 'approve'])
+    ->name('expenses.approve');
+Route::post('/expenses/{expense}/reject', [ExpenseController::class, 'reject'])
+    ->name('expenses.reject');
+Route::get('/expenses/monthly-report', [ExpenseController::class, 'monthlyReport'])
+    ->name('expenses.monthly-report');
 // Custom logout route to override default
+// Expense Management
+Route::resource('expenses', ExpenseController::class);
 Route::post('logout', [App\Http\Controllers\Auth\LoginController::class, 'logout'])->name('logout');
