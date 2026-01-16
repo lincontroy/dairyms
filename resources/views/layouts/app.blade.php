@@ -826,17 +826,7 @@
                     @yield('page-title', 'Dashboard')
                 </h4>
                 
-                <!-- Search Form -->
-                <form class="search-form" action="{{ route('animals.search') }}" method="GET">
-                    <div class="input-group">
-                        <input type="text" class="form-control" 
-                               placeholder="Search animals..." 
-                               name="q" value="{{ request('q') }}">
-                        <button class="btn" type="submit">
-                            <i class="fas fa-search"></i>
-                        </button>
-                    </div>
-                </form>
+              
                 
                 <!-- User Dropdown -->
                 <div class="user-dropdown">
