@@ -649,6 +649,27 @@
                             @endif
                         </a>
                     </li>
+
+                    <!-- Calves Section -->
+@if(auth()->user()->isAdmin() || auth()->user()->isManager() || auth()->user()->isStaff())
+<li class="nav-item">
+    <div class="section-title">Calf Management</div>
+</li>
+
+<li class="nav-item">
+    <a class="nav-link {{ request()->routeIs('calves.*') && !request()->routeIs('calves.statistics') ? 'active' : '' }}" 
+       href="{{ route('calves.index') }}">
+        <i class="fas fa-baby"></i>
+        <span>Calves Registry</span>
+        @php
+            $totalCalves = \App\Models\Calf::count();
+        @endphp
+        @if($totalCalves > 0)
+            <span class="badge">{{ $totalCalves }}</span>
+        @endif
+    </a>
+</li>
+@endif
                     
                     @if(auth()->user()->isAdmin() || auth()->user()->isStaff() || auth()->user()->isManager())
                     <li class="nav-item">

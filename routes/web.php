@@ -7,6 +7,7 @@ use App\Http\Controllers\HealthRecordController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\BreedingRecordController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\CalfController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\MilkSupplyController;
@@ -92,7 +93,23 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/payments/generate', [SupplierPaymentController::class, 'generatePayments'])
         ->name('payments.generate');
 
+       
+    
+    // Additional calf routes
+    Route::post('calves/{calf}/mark-weaned', [CalfController::class, 'markWeaned'])
+        ->name('calves.mark-weaned');
+    Route::post('calves/{calf}/update-health-status', [CalfController::class, 'updateHealthStatus'])
+        ->name('calves.update-health-status');
+    Route::post('calves/{calf}/record-death', [CalfController::class, 'recordDeath'])
+        ->name('calves.record-death');
+    Route::get('calves/statistics', [CalfController::class, 'statistics'])
+        ->name('calves.statistics');
+    Route::get('calves/by-dam/{dam}', [CalfController::class, 'byDam'])
+        ->name('calves.by-dam');
+
         Route::resource('suppliers', SupplierController::class);
+
+        Route::resource('calves', CalfController::class);
     
         // Milk Supplies
         Route::resource('milk-supplies', MilkSupplyController::class);
